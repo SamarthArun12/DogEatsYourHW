@@ -30,20 +30,23 @@ def gemini_check():
     while True:
         #next 7 lines of code ai generated (prompt made by me however)
         response = client.models.generate_content(
-        model="gemini-3.1-flash-lite-preview",
-        contents=[
+    model="gemini-3.1-flash-lite-preview",
+    contents=[
             types.Part.from_bytes(data=image_data, mime_type="image/jpeg"),
             #cool detailed prompt for increased consistency and accuracy, also gives gemini previous response which errored.
-            "Step 1: Count number of questions in this image (look for numbered problems (use ex:1, 2, 3, 1a, 1b, 1c etc when counting)). Step 2: Then estimate number of minutes taken per question. Guidline Time/Q (approximate, DO NOT STRICTLY FOLLOW): simple math problem: 0.5-0.75 mins, moderate math problem: 2-3 mins, hard math problem: 4-5 mins. 1 page of history notes ~10 mins. Use your judgement for difficulty. Step 3: return total time taken as an integer. Fix error from previous response if there is one. IMPORTANT: Respond with ONLY a whole number. NO UNITS, WORDS, SYMBOLS. ERROR IN PREV RESPONSE: " + errors
-        ]   
-        )
+            "Step 1: Count number of questions in this image (look for numbered problems (use ex:1, 2, 3, 1a, 1b, 1c etc when counting)). Step 2: Then estimate number of minutes taken per question. Guidline Time/Q (approximate, DO NOT STRICTLY FOLLOW): simple math problem: 0.5-0.75 mins, moderate math problem: 2-3 mins, hard math problem: 4-5 mins. 1 page of history notes ~10 mins. Use your judgement for difficulty. Step 3: return total time taken as an integer. Fix error from previous response if there is one. IMPORTANT: Respond with ONLY a whole number. NO UNITS, WORDS, SYMBOLS. " + errors
+        ]   ,
+    config=types.GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema={"type": "INTEGER"}
+    )
+)
 
-        #if gemini's response can't be converted to an integer, has gemini try again.
-        try:
-            minutes = int(response.text.strip())
-            #this line never runs if can't be converted to int
+        #if gemini's response isn't an integer, try again
+        if response.text.isdigit():
+            minutes = int(response.text)
             break
-        except Exception as e:
+        else:
             #errors is given to gemini so it can see what was wrong with a previous response
             errors = "Prev response couldn't be converted to integer. Prev response which is invalid: " + response.text
             print(response.text)
