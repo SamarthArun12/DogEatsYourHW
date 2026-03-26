@@ -66,6 +66,7 @@ pygame.init()
 screen = pygame.display.set_mode((400,500))
 clock = pygame.time.Clock()
 running = True
+hunger = 10
 
 #all the buttons and the coordinates are in a list so code is more compact (x, y, width, height, (color))
 buttons = {
@@ -74,7 +75,8 @@ buttons = {
     "pause": (15, 320, 177.5, 75, (200,200,200)),
     "button4": (207.5, 320, 177.5, 75, (200,200,200)),
     "image_loc": (15, 55, 370, 250, (200,200,200)),
-    "hunger_bar": (25, 65, 350, 40, (255,255,255))
+    "hunger_background": (25, 65, 350, 40, (255,255,255)),
+    "hunger_bar": (30, 70, 340*(hunger/30), 30, (0,0,0))
 }
 #rects used later in mousebuttondown for click detection
 rects = {}
@@ -86,10 +88,8 @@ def update_ui():
         rect = pygame.Rect(coords)
         rects[key] = rect
     for key, rectangle in rects.items():
-        x, y, w, h, color = buttons[key]
+        x, y, width, height, color = buttons[key]
         pygame.draw.rect(screen, color, rectangle)
-
-hunger = 30
 
 while running:
     #required for window to not freeze
