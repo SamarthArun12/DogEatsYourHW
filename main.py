@@ -54,32 +54,46 @@ def gemini_check():
 
     return minutes
 
+def picture():
+    global hunger
+    minutes = gemini_check()
+    hunger += minutes
+    if hunger > 30:
+        hunger = 30
+
+
 pygame.init()
 screen = pygame.display.set_mode((400,500))
 clock = pygame.time.Clock()
 running = True
 
-#all the buttons and the coordinates are in a list so code is more compact
+#all the buttons and the coordinates are in a list so code is more compact (x, y, width, height, (color))
 buttons = {
-    "picture": (15, 410, 177.5, 75),
-    "stop": (207.5, 410, 177.5, 75),
-    "pause": (15, 320, 177.5, 75),
-    "button4": (207.5, 320, 177.5, 75),
-    "image_loc": (15, 55, 370, 250),
+    "picture": (15, 410, 177.5, 75, (200,200,200)),
+    "stop": (207.5, 410, 177.5, 75, (200,200,200)),
+    "pause": (15, 320, 177.5, 75, (200,200,200)),
+    "button4": (207.5, 320, 177.5, 75, (200,200,200)),
+    "image_loc": (15, 55, 370, 250, (200,200,200)),
+    "hunger_bar": (25, 65, 350, 40, (255,255,255))
 }
 #rects used later in mousebuttondown for click detection
 rects = {}
 #draws rectangles
-for key, coords in buttons.items():
-    rect = pygame.Rect(coords)
-    rects[key] = rect
-for key, rectangle in rects.items():
-    pygame.draw.rect(screen, (200,200,200), rectangle)
+def update_ui():
+    for key, data in buttons.items():
+        x, y, width, height, color = data
+        coords = (x, y, width, height)
+        rect = pygame.Rect(coords)
+        rects[key] = rect
+    for key, rectangle in rects.items():
+        x, y, w, h, color = buttons[key]
+        pygame.draw.rect(screen, color, rectangle)
 
-hunger = 100
+hunger = 30
 
 while running:
     #required for window to not freeze
+    update_ui()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
