@@ -8,6 +8,8 @@ from tkinter import filedialog
 key = "AIzaSyA6B-G3ycGcn_GeJJMSi8nV2M7fAY1Gw1I"
 client = genai.Client(api_key=key)
 
+#amaze change
+
 #for image selecting
 def select_image():
     #creates a temp screen(req for filedialog)
