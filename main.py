@@ -2,8 +2,8 @@ from google import genai
 from google.genai import types
 import tkinter
 import pygame
-import time
 from tkinter import filedialog
+import random
 #crashes b/c pygame and tkinter at same time, threading lets them work together
 
 key = "AIzaSyA6B-G3ycGcn_GeJJMSi8nV2M7fAY1Gw1I"
@@ -62,8 +62,8 @@ def picture():
     global hunger
     minutes = gemini_check()
     hunger += minutes
-    if hunger > 30:
-        hunger = 30
+    if hunger > maxHunger:
+        hunger = maxHunger
 
 def stop():
     '''    
@@ -129,7 +129,12 @@ pygame.init()
 screen = pygame.display.set_mode((400,500))
 clock = pygame.time.Clock()
 running = True
-hunger = 20
+hunger = 180
+maxHunger = 180
+#very fast for testing purposes, default should be 10,000
+hungerRate = 10
+targetTime = pygame.time.get_ticks() + hungerRate
+currentSprite = None
 
 #all the buttons and the coordinates are in a list so code is more compact 
 #format: (x, y, width, height, (color))
@@ -140,17 +145,45 @@ buttons = {
     "button4":          (207.5, 320, 177.5, 75, (200, 200, 200)),   # grey   - unknown
     "image_loc":        (15,    55,  370,   250, (230, 230, 230)),  # light grey - dog display area
     "hunger_background":(25,    65,  350,   40,  (255, 255, 255)),  # white
-    "hunger_bar":       (30,    70,  340*(hunger/30), 30, (80, 200, 80)) # green hunger bar
+    "hunger_bar":       (30,    70,  340*(hunger/maxHunger), 30, (80, 200, 80)) # green hunger bar
 }
 #rects used later in mousebuttondown for click detection (with keys so no need for if statement)
 rects = {}
+dog_states = {
+    "Full": {
+        "hungerRange": (120, 180),
+        "FileNames": (
+            "happy.jpg", "happy2.jpg", "happy2.HEIC", 
+            "sleeping.HEIC", "sleeping2.heic", "sleeping3.HEIC"
+        )
+    },
+    "Neutral": {
+        "hungerRange": (60, 120),
+        "FileNames": (
+            "neutral.heic", "neutral2.HEIC", 
+            "sleeping4.HEIC", "sleeping5.HEIC", "sleeping6.HEIC"
+        )
+    },
+    "Hungry": {
+        "hungerRange": (0, 60),
+        "FileNames": (
+            "hungry.jpg", "hungry2.heic", "hungry3.heic", 
+            "hungry4.HEIC", "hungry5.HEIC", "icky.HEIC", "leaving.HEIC"
+        )
+    },
+    "Eating": {
+        "FileNames": (
+            "eating.jpg", "eating.HEIC", "eating2.HEIC", "eating3.HEIC",  "icky.HEIC"
+        )
+    }
+}
 
 # Replace your update_ui() function with this:
 
 font = pygame.font.SysFont(None, 32)
 
 def update_ui():
-    buttons["hunger_bar"] = (30, 70, 340 * (hunger / 30), 30, (0, 0, 0))
+    buttons["hunger_bar"] = (30, 70, 340 * (hunger / 180), 30, (0, 0, 0))
 
     for key, data in buttons.items():
         x, y, width, height, color = data
@@ -182,9 +215,26 @@ def update_ui():
     hunger_label = font.render("Hunger", True, (0, 0, 0))
     screen.blit(hunger_label, (25, 40))
 
+def change_dog_state():
+    global currentSprite
+    for state in dog_states:
+        if state == "Eating": continue
+        min, max = dog_states[state]["hungerRange"]
+        if min > hunger or max < hunger: continue
+        length = len(dog_states[state]["FileNames"])-1
+        currentSprite = dog_states[state]["FileNames"][random.randint(0, length)]
+        print(currentSprite)
+
 while running:
-    #required for window to not freeze
+
+    currentTime = pygame.time.get_ticks()
+    if currentTime > targetTime:
+        hunger -= 1
+        targetTime = currentTime + hungerRate
+
+    change_dog_state()
     update_ui()
+
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
@@ -211,19 +261,17 @@ while running:
 
     #actually displays pictures and updated stuff
     pygame.display.flip()
-    clock.tick(15)
+    clock.tick(5)
 
 
 '''
 TO DO:
     Issues:
-        1. Hunger bar isn't actively updated, its predefined in buttons 
-            Add a section to update_ui so that the width is redefined
-        2. the stop() function freezes pygame window (easy bypass of timer)
+        1. the stop() function freezes pygame window (easy bypass of timer)
     Features:
-        1. Hunger acc changing, and an actual timer, and a way to lose (dead dog)
+        1. A way to lose (dead dog)
         2. Proper ui (placeholders is fine, but make placeholders such that they are
-           stored in and accessed from the UISprites folder). Make sure buttons labeled
+           stored in and accessed from the UISprites folder).
         3. Have the different images of the dog show up (from DogSprites) based on hunger
         4. Something that happens for button4 (idk what) and rename button4 based on new function
         5. functionality for the pause button
