@@ -66,6 +66,7 @@ def picture():
         hunger = 30
 
 def stop():
+    '''    
     invalid = True
     while invalid:
         close = input("Do you want to close the app y/n: ").lower()
@@ -76,6 +77,42 @@ def stop():
         elif close == "n":
             invalid = False
             pass
+    '''
+    global running
+    font_large = pygame.font.SysFont(None, 36)
+    confirming = True
+
+    while confirming:
+        screen.fill((50, 50, 50))
+
+        # Draw prompt text
+        text = font_large.render("Quit the app?", True, (255, 255, 255))
+        screen.blit(text, (400//2 - text.get_width()//2, 200))
+
+        # YES button
+        yes_rect = pygame.Rect(60, 270, 110, 50)
+        pygame.draw.rect(screen, (220, 80, 80), yes_rect)
+        yes_text = font_large.render("YES", True, (255, 255, 255))
+        screen.blit(yes_text, (yes_rect.x + (yes_rect.width - yes_text.get_width())//2, yes_rect.y + 12))
+
+        # NO button
+        no_rect = pygame.Rect(230, 270, 110, 50)
+        pygame.draw.rect(screen, (100, 180, 100), no_rect)
+        no_text = font_large.render("NO", True, (255, 255, 255))
+        screen.blit(no_text, (no_rect.x + (no_rect.width - no_text.get_width())//2, no_rect.y + 12))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                confirming = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if yes_rect.collidepoint(event.pos):
+                    running = False
+                    confirming = False
+                elif no_rect.collidepoint(event.pos):
+                    confirming = False  # go back to game
 
 def pause():
     print("paused")
@@ -97,29 +134,53 @@ hunger = 20
 #all the buttons and the coordinates are in a list so code is more compact 
 #format: (x, y, width, height, (color))
 buttons = {
-    "picture": (15, 410, 177.5, 75, (200,200,200)),
-    "stop": (207.5, 410, 177.5, 75, (200,200,200)),
-    "pause": (15, 320, 177.5, 75, (200,200,200)),
-    "button4": (207.5, 320, 177.5, 75, (200,200,200)),
-    "image_loc": (15, 55, 370, 250, (200,200,200)),
-    "hunger_background": (25, 65, 350, 40, (255,255,255)),
-    "hunger_bar": (30, 70, 340*(hunger/30), 30, (0,0,0))
+    "picture":          (15,    410, 177.5, 75, (100, 180, 100)),  # green  - submit homework
+    "stop":             (207.5, 410, 177.5, 75, (220, 80,  80)),   # red    - quit
+    "pause":            (15,    320, 177.5, 75, (100, 140, 220)),   # blue   - pause
+    "button4":          (207.5, 320, 177.5, 75, (200, 200, 200)),   # grey   - unknown
+    "image_loc":        (15,    55,  370,   250, (230, 230, 230)),  # light grey - dog display area
+    "hunger_background":(25,    65,  350,   40,  (255, 255, 255)),  # white
+    "hunger_bar":       (30,    70,  340*(hunger/30), 30, (80, 200, 80)) # green hunger bar
 }
 #rects used later in mousebuttondown for click detection (with keys so no need for if statement)
 rects = {}
 
-#refreshes the ui
+# Replace your update_ui() function with this:
+
+font = pygame.font.SysFont(None, 32)
+
 def update_ui():
+    buttons["hunger_bar"] = (30, 70, 340 * (hunger / 30), 30, (0, 0, 0))
+
     for key, data in buttons.items():
-        #unpack data from buttons and create rectangle (not yet drawn)
         x, y, width, height, color = data
-        coords = (x, y, width, height)
-        rect = pygame.Rect(coords)
+        rect = pygame.Rect((x, y, width, height))
         rects[key] = rect
-    #draws the rectangles on the screen
+
     for key, rectangle in rects.items():
         x, y, width, height, color = buttons[key]
         pygame.draw.rect(screen, color, rectangle)
+
+    # Button labels
+    labels = {
+        "picture": ("Submit HW", (0, 0, 0)),
+        "stop":    ("Quit",       (180, 0, 0)),
+        "pause":   ("Pause",      (0, 0, 0)),
+        "button4": ("?",            (0, 0, 0)),
+    }
+
+    for key, (label, color) in labels.items():
+        if key not in rects: continue
+        rect = rects[key]
+        text_surface = font.render(label, True, color)
+        # Center the text inside the button
+        text_x = rect.x + (rect.width - text_surface.get_width()) // 2
+        text_y = rect.y + (rect.height - text_surface.get_height()) // 2
+        screen.blit(text_surface, (text_x, text_y))
+
+    # "Hunger" label above the bar
+    hunger_label = font.render("Hunger", True, (0, 0, 0))
+    screen.blit(hunger_label, (25, 40))
 
 while running:
     #required for window to not freeze
@@ -144,8 +205,9 @@ while running:
             print("button "+key+" clicked!")
             
             #calls necessary function based on key from mouse button input
-            if not functions[key]: continue
-            functions[key]()
+            if action not in functions: continue
+            functions[action]()
+
 
     #actually displays pictures and updated stuff
     pygame.display.flip()
