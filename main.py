@@ -1,10 +1,11 @@
+#if u dont got these libraries, download em
 from google import genai
 from google.genai import types
 import tkinter
 import pygame
 from tkinter import filedialog
 import random
-#crashes b/c pygame and tkinter at same time, threading lets them work together
+from PIL import Image
 
 key = "AIzaSyA6B-G3ycGcn_GeJJMSi8nV2M7fAY1Gw1I"
 client = genai.Client(api_key=key)
@@ -128,13 +129,14 @@ functions = {
 pygame.init()
 screen = pygame.display.set_mode((400,500))
 clock = pygame.time.Clock()
+font = pygame.font.SysFont(None, 32)
 running = True
 hunger = 180
 maxHunger = 180
 #very fast for testing purposes, default should be 10,000
-hungerRate = 10
+hungerRate = 1
 targetTime = pygame.time.get_ticks() + hungerRate
-currentSprite = None
+currentImage = None
 
 #all the buttons and the coordinates are in a list so code is more compact 
 #format: (x, y, width, height, (color))
@@ -143,7 +145,7 @@ buttons = {
     "stop":             (207.5, 410, 177.5, 75, (220, 80,  80)),   # red    - quit
     "pause":            (15,    320, 177.5, 75, (100, 140, 220)),   # blue   - pause
     "button4":          (207.5, 320, 177.5, 75, (200, 200, 200)),   # grey   - unknown
-    "image_loc":        (15,    55,  370,   250, (230, 230, 230)),  # light grey - dog display area
+    #"image_loc":       (15,    55,  370,   250, (230, 230, 230)),  # light grey - dog display area
     "hunger_background":(25,    65,  350,   40,  (255, 255, 255)),  # white
     "hunger_bar":       (30,    70,  340*(hunger/maxHunger), 30, (80, 200, 80)) # green hunger bar
 }
@@ -153,37 +155,68 @@ dog_states = {
     "Full": {
         "hungerRange": (120, 180),
         "FileNames": (
-            "happy.jpg", "happy2.jpg", "happy2.HEIC", 
-            "sleeping.HEIC", "sleeping2.heic", "sleeping3.HEIC"
+            "happy.jpg", "happy2.jpg", 
+            "sleeping.png", "sleeping2.png", "sleeping3.png"
         )
     },
     "Neutral": {
         "hungerRange": (60, 120),
         "FileNames": (
-            "neutral.heic", "neutral2.HEIC", 
-            "sleeping4.HEIC", "sleeping5.HEIC", "sleeping6.HEIC"
+            "neutral.png", "neutral2.png", 
+            "sleeping4.png", "sleeping5.png", "sleeping6.png"
         )
     },
     "Hungry": {
         "hungerRange": (0, 60),
         "FileNames": (
-            "hungry.jpg", "hungry2.heic", "hungry3.heic", 
-            "hungry4.HEIC", "hungry5.HEIC", "icky.HEIC", "leaving.HEIC"
+            "hungry.jpg", "hungry2.png", "hungry3.png", 
+            "hungry4.png", "hungry5.png", "leaving.png"
         )
     },
     "Eating": {
         "FileNames": (
-            "eating.jpg", "eating.HEIC", "eating2.HEIC", "eating3.HEIC",  "icky.HEIC"
+            "eating.jpg", "eating2.png", "eating3.png", "icky.png"
         )
     }
+}#preload images
+#preload all images so no lag later
+images = {
+    "Full":[],
+    "Neutral":[],
+    "Hungry":[],
+    "Eating":[]
 }
+for state, data in dog_states.items():
+    for fileName in data["FileNames"]:
+        #ai generated pillow -> pygame
+        pil_img = Image.open("DogSprites/"+fileName)
+        mode = pil_img.mode
+        size = pil_img.size
+        data_str = pil_img.tobytes()
+        pygame_surface = pygame.image.fromstring(data_str, size, mode)
+        #later figure something out so that images don't get warped
+        pygame_surface = pygame.transform.scale(pygame_surface, (370, 250))
 
-# Replace your update_ui() function with this:
+        images[state].append(pygame_surface)
 
-font = pygame.font.SysFont(None, 32)
+def change_dog_state():
+    global currentImage
+    for state in dog_states:
+        if state == "Eating": continue
+        min, max = dog_states[state]["hungerRange"]
+        if min > hunger or max < hunger: continue
+        break
+
+    relevantImages = images[state]
+
+    selectedImage = random.choice(relevantImages)
+    return selectedImage
 
 def update_ui():
-    buttons["hunger_bar"] = (30, 70, 340 * (hunger / 180), 30, (0, 0, 0))
+    screen.fill((50,50,50))
+    buttons["hunger_bar"] = (30, 70, 340 * (hunger / maxHunger), 30, (0, 0, 0))
+    selectedImage = change_dog_state()
+    screen.blit(selectedImage, (15,55))
 
     for key, data in buttons.items():
         x, y, width, height, color = data
@@ -197,9 +230,9 @@ def update_ui():
     # Button labels
     labels = {
         "picture": ("Submit HW", (0, 0, 0)),
-        "stop":    ("Quit",       (180, 0, 0)),
-        "pause":   ("Pause",      (0, 0, 0)),
-        "button4": ("?",            (0, 0, 0)),
+        "stop":    ("Quit",      (180, 0, 0)),
+        "pause":   ("Pause",     (0, 0, 0)),
+        "button4": ("?",         (0, 0, 0)),
     }
 
     for key, (label, color) in labels.items():
@@ -215,15 +248,6 @@ def update_ui():
     hunger_label = font.render("Hunger", True, (0, 0, 0))
     screen.blit(hunger_label, (25, 40))
 
-def change_dog_state():
-    global currentSprite
-    for state in dog_states:
-        if state == "Eating": continue
-        min, max = dog_states[state]["hungerRange"]
-        if min > hunger or max < hunger: continue
-        length = len(dog_states[state]["FileNames"])-1
-        currentSprite = dog_states[state]["FileNames"][random.randint(0, length)]
-        print(currentSprite)
 
 while running:
 
@@ -232,7 +256,6 @@ while running:
         hunger -= 1
         targetTime = currentTime + hungerRate
 
-    change_dog_state()
     update_ui()
 
     for event in pygame.event.get():
