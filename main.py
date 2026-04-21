@@ -153,38 +153,42 @@ buttons = {
 rects = {}
 dog_states = {
     "Full": {
-        "hungerRange": (120, 180),
-        "FileNames": (
+        "hungerRange": [120, 180],
+        "FileNames": [
             "happy.jpg", "happy2.jpg", 
             "sleeping.png", "sleeping2.png", "sleeping3.png"
-        )
+        ]
     },
     "Neutral": {
-        "hungerRange": (60, 120),
-        "FileNames": (
+        "hungerRange": [60, 120],
+        "FileNames": [
             "neutral.png", "neutral2.png", 
-            "sleeping4.png", "sleeping5.png", "sleeping6.png"
-        )
+            "sleeping4.png", "sleeping6.png"
+        ]
     },
     "Hungry": {
-        "hungerRange": (0, 60),
-        "FileNames": (
+        "hungerRange": [0, 60],
+        "FileNames": [
             "hungry.jpg", "hungry2.png", "hungry3.png", 
             "hungry4.png", "hungry5.png", "leaving.png"
-        )
+        ]
+    },
+    "Dead": {
+        "FileNames": ["sleeping5.png"]
     },
     "Eating": {
-        "FileNames": (
+        "FileNames": [
             "eating.jpg", "eating2.png", "eating3.png", "icky.png"
-        )
-    }
-}#preload images
+        ]
+    },
+}
 #preload all images so no lag later
 images = {
     "Full":[],
     "Neutral":[],
     "Hungry":[],
-    "Eating":[]
+    "Dead": [],
+    "Eating":[],
 }
 for state, data in dog_states.items():
     for fileName in data["FileNames"]:
@@ -202,14 +206,16 @@ for state, data in dog_states.items():
 def change_dog_state():
     global currentImage
     for state in dog_states:
-        if state == "Eating": continue
+        if state == "Eating" or state == "Dead": continue
         min, max = dog_states[state]["hungerRange"]
         if min > hunger or max < hunger: continue
         break
 
+    if state == "Eating": state = "Dead"
     relevantImages = images[state]
 
     selectedImage = random.choice(relevantImages)
+    print(state)
     return selectedImage
 
 def update_ui():
@@ -284,7 +290,7 @@ while running:
 
     #actually displays pictures and updated stuff
     pygame.display.flip()
-    clock.tick(5)
+    clock.tick(60)
 
 
 '''
