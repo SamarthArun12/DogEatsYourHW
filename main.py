@@ -134,7 +134,7 @@ running = True
 hunger = 180
 maxHunger = 180
 #very fast for testing purposes, default should be 10,000
-hungerRate = 1
+hungerRate = 10000
 targetTime = pygame.time.get_ticks() + hungerRate
 currentImage = None
 
@@ -146,12 +146,12 @@ buttons = {
     "pause":            (15,    320, 177.5, 75, (100, 140, 220)),   # blue   - pause
     "button4":          (207.5, 320, 177.5, 75, (200, 200, 200)),   # grey   - unknown
     #"image_loc":       (15,    55,  370,   250, (230, 230, 230)),  # light grey - dog display area
-    "hunger_background":(25,    65,  350,   40,  (255, 255, 255)),  # white
-    "hunger_bar":       (30,    70,  340*(hunger/maxHunger), 30, (80, 200, 80)) # green hunger bar
+    "hunger_background":(25,    65,  350,   40,  (47, 54, 153)),  # dark blue
+    "hunger_bar":       (30,    70,  340*(hunger/maxHunger), 30, (0, 183, 239)) # light blue hunger bar
 }
 #rects used later in mousebuttondown for click detection (with keys so no need for if statement)
 rects = {}
-dog_states = {
+file_names = {
     "Full": {
         "hungerRange": [120, 180],
         "FileNames": [
@@ -181,6 +181,16 @@ dog_states = {
             "eating.jpg", "eating2.png", "eating3.png", "icky.png"
         ]
     },
+    "UISprites":{
+        #width, height for scaling
+        "FileNames": {
+            "pause.png":(), 
+            "stop.png": (),
+            "picture.png": (), 
+            "background.png": (),
+            "hungerbar.png": ()
+        }
+    }
 }
 #preload all images so no lag later
 images = {
@@ -189,25 +199,29 @@ images = {
     "Hungry":[],
     "Dead": [],
     "Eating":[],
+    "UISprites": []
 }
-for state, data in dog_states.items():
+for key, data in file_names.items():
     for fileName in data["FileNames"]:
         #ai generated pillow -> pygame
-        pil_img = Image.open("DogSprites/"+fileName)
+        pil_img = Image.open("Images/"+fileName)
         mode = pil_img.mode
         size = pil_img.size
         data_str = pil_img.tobytes()
         pygame_surface = pygame.image.fromstring(data_str, size, mode)
         #later figure something out so that images don't get warped
-        pygame_surface = pygame.transform.scale(pygame_surface, (370, 250))
+        if key == "UISprites":
+            pygame_surface = pygame.transform.scale(pygame_surface, (177.5, 75))
+        else:
+            pygame_surface = pygame.transform.scale(pygame_surface, (370, 250))
 
-        images[state].append(pygame_surface)
+        images[key].append(pygame_surface)
 
 def change_dog_state():
     global currentImage
-    for state in dog_states:
+    for state in file_names:
         if state == "Eating" or state == "Dead": continue
-        min, max = dog_states[state]["hungerRange"]
+        min, max = file_names[state]["hungerRange"]
         if min > hunger or max < hunger: continue
         break
 
@@ -215,12 +229,11 @@ def change_dog_state():
     relevantImages = images[state]
 
     selectedImage = random.choice(relevantImages)
-    print(state)
     return selectedImage
 
 def update_ui():
-    screen.fill((50,50,50))
-    buttons["hunger_bar"] = (30, 70, 340 * (hunger / maxHunger), 30, (0, 0, 0))
+    screen.fill((0,183,239))
+    buttons["hunger_bar"] = (30, 70, 340 * (hunger / maxHunger), 30, (0, 183, 239))
     selectedImage = change_dog_state()
     screen.blit(selectedImage, (15,55))
 
