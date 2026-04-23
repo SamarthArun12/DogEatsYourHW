@@ -6,6 +6,7 @@ import pygame
 from tkinter import filedialog
 import random
 from PIL import Image
+import os
 
 key = "AIzaSyA6B-G3ycGcn_GeJJMSi8nV2M7fAY1Gw1I"
 client = genai.Client(api_key=key)
@@ -135,6 +136,9 @@ hunger = 180
 maxHunger = 180
 #very fast for testing purposes, default should be 10,000
 hungerRate = 10000
+imgChangeInterval = 5000
+targetImgChange = pygame.time.get_ticks() + imgChangeInterval
+lastImg = None
 targetTime = pygame.time.get_ticks() + hungerRate
 currentImage = None
 
@@ -184,11 +188,9 @@ file_names = {
     "UISprites":{
         #width, height for scaling
         "FileNames": {
-            "pause.png":(), 
-            "stop.png": (),
-            "picture.png": (), 
-            "background.png": (),
-            "hungerbar.png": ()
+            "pause.png":(177.5, 75), 
+            "stop.png": (177.5, 75),
+            "picture.png": (177.5, 75)
         }
     }
 }
@@ -198,12 +200,17 @@ images = {
     "Neutral":[],
     "Hungry":[],
     "Dead": [],
-    "Eating":[],
-    "UISprites": []
+    "Eating":[]
+}
+UISprites = {
+    "pause.png": None,
+    "stop.png": None,
+    "picture.png": None,
 }
 for key, data in file_names.items():
     for fileName in data["FileNames"]:
         #ai generated pillow -> pygame
+        print(fileName)
         pil_img = Image.open("Images/"+fileName)
         mode = pil_img.mode
         size = pil_img.size
@@ -211,11 +218,13 @@ for key, data in file_names.items():
         pygame_surface = pygame.image.fromstring(data_str, size, mode)
         #later figure something out so that images don't get warped
         if key == "UISprites":
-            pygame_surface = pygame.transform.scale(pygame_surface, (177.5, 75))
+            size = file_names["UISprites"]["FileNames"][fileName]
+            print(size)
+            pygame_surface = pygame.transform.scale(pygame_surface, size)
+            UISprites[fileName] = pygame_surface
         else:
-            pygame_surface = pygame.transform.scale(pygame_surface, (370, 250))
-
-        images[key].append(pygame_surface)
+            pygame_surface = pygame.transform.scale(pygame_surface, (370,250))
+            images[key].append(pygame_surface)
 
 def change_dog_state():
     global currentImage
@@ -232,15 +241,30 @@ def change_dog_state():
     return selectedImage
 
 def update_ui():
-    screen.fill((0,183,239))
+    global targetImgChange
+    global lastImg
+    screen.fill((0,160,209))
     buttons["hunger_bar"] = (30, 70, 340 * (hunger / maxHunger), 30, (0, 183, 239))
-    selectedImage = change_dog_state()
-    screen.blit(selectedImage, (15,55))
+    if pygame.time.get_ticks() > targetImgChange:
+        selectedImage = change_dog_state()
+        print("passed time check")
+        print("Current: "+str(pygame.time.get_ticks())+" Last: "+str(targetImgChange))
+        screen.blit(selectedImage, (15,55))
+        targetImgChange = pygame.time.get_ticks() + imgChangeInterval
+        lastImg = selectedImage
+    if lastImg:    
+        screen.blit(lastImg, (15,55))
 
     for key, data in buttons.items():
         x, y, width, height, color = data
-        rect = pygame.Rect((x, y, width, height))
-        rects[key] = rect
+        filename = key+".png"
+        
+
+        if UISprites.get(filename):
+            screen.blit(UISprites[filename], (x, y))
+        else:
+            rect = pygame.Rect((x, y, width, height))
+            rects[key] = rect
 
     for key, rectangle in rects.items():
         x, y, width, height, color = buttons[key]
@@ -266,7 +290,6 @@ def update_ui():
     # "Hunger" label above the bar
     hunger_label = font.render("Hunger", True, (0, 0, 0))
     screen.blit(hunger_label, (25, 40))
-
 
 while running:
 
@@ -305,17 +328,12 @@ while running:
     pygame.display.flip()
     clock.tick(60)
 
-
 '''
 TO DO:
     Issues:
         1. the stop() function freezes pygame window (easy bypass of timer)
     Features:
-        1. A way to lose (dead dog)
-        2. Proper ui (placeholders is fine, but make placeholders such that they are
-           stored in and accessed from the UISprites folder).
-        3. Have the different images of the dog show up (from DogSprites) based on hunger
-        4. Something that happens for button4 (idk what) and rename button4 based on new function
-        5. functionality for the pause button
+        1. Something that happens for button4 (idk what) and rename button4 based on new function
+        2. functionality for the pause button
     And last but not least acc testing
 '''
