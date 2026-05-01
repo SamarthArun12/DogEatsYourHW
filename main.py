@@ -7,8 +7,11 @@ from tkinter import filedialog
 import random
 from PIL import Image
 import os
+from dotenv import load_dotenv
 
-key = "AIzaSyA6B-G3ycGcn_GeJJMSi8nV2M7fAY1Gw1I"
+#no exposed api key on github, loaded from .env
+load_dotenv()
+key = os.abortt("GEMINI_API_KEY")
 client = genai.Client(api_key=key)
 
 #tkinter is used for filedialog, which allows us to have a user select image from finder/explorer etc
