@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 #no exposed api key on github, loaded from .env
 load_dotenv()
-key = os.abortt("GEMINI_API_KEY")
+key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=key)
 
 #tkinter is used for filedialog, which allows us to have a user select image from finder/explorer etc
@@ -246,8 +246,11 @@ def change_dog_state():
 def update_ui():
     global targetImgChange
     global lastImg
-    screen.fill((0,160,209))
+    
+    screen.fill((0, 160, 209)) 
+    
     buttons["hunger_bar"] = (30, 70, 340 * (hunger / maxHunger), 30, (0, 183, 239))
+    
     if pygame.time.get_ticks() > targetImgChange:
         selectedImage = change_dog_state()
         print("passed time check")
@@ -255,42 +258,44 @@ def update_ui():
         screen.blit(selectedImage, (15,55))
         targetImgChange = pygame.time.get_ticks() + imgChangeInterval
         lastImg = selectedImage
+    
     if lastImg:    
-        screen.blit(lastImg, (15,55))
+        screen.blit(lastImg, (15, 55))
 
+    # DRAW BUTTONS 
     for key, data in buttons.items():
+        if "hunger" in key:
+            x, y, w, h, color = data
+            pygame.draw.rect(screen, color, (x, y, w, h))
+            continue
+
         x, y, width, height, color = data
         filename = key+".png"
         
-
+        # create clickable rect object
+        rect = pygame.Rect((x, y, width, height))
+        rects[key] = rect
+        
+        # Draw the Rect
+        pygame.draw.rect(screen, color, rect)
+        
+        # Draw the PNG on top 
         if UISprites.get(filename):
             screen.blit(UISprites[filename], (x, y))
-        else:
-            rect = pygame.Rect((x, y, width, height))
-            rects[key] = rect
 
-    for key, rectangle in rects.items():
-        x, y, width, height, color = buttons[key]
-        pygame.draw.rect(screen, color, rectangle)
-
-    # Button labels
     labels = {
-        "picture": ("Submit HW", (0, 0, 0)),
-        "stop":    ("Quit",      (180, 0, 0)),
-        "pause":   ("Pause",     (0, 0, 0)),
-        "button4": ("?",         (0, 0, 0)),
+        "button4": ("?", (0, 0, 0)),
     }
 
     for key, (label, color) in labels.items():
-        if key not in rects: continue
-        rect = rects[key]
-        text_surface = font.render(label, True, color)
-        # Center the text inside the button
-        text_x = rect.x + (rect.width - text_surface.get_width()) // 2
-        text_y = rect.y + (rect.height - text_surface.get_height()) // 2
-        screen.blit(text_surface, (text_x, text_y))
+        if key in rects and not UISprites.get(key + ".png"):
+            rect = rects[key]
+            text_surface = font.render(label, True, color)
+            text_x = rect.x + (rect.width - text_surface.get_width()) // 2
+            text_y = rect.y + (rect.height - text_surface.get_height()) // 2
+            screen.blit(text_surface, (text_x, text_y))
 
-    # "Hunger" label above the bar
+    # 6. Hunger label
     hunger_label = font.render("Hunger", True, (0, 0, 0))
     screen.blit(hunger_label, (25, 40))
 
